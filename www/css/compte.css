@@ -1,0 +1,108 @@
+body {
+    padding-top: 20px;
+    background: #f4f4f4;
+}
+.account-image-full {
+    background: white;
+    margin: 5px;
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+    position: relative;
+}
+
+.account-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.account-option {
+    background: white;
+    width: calc(50% - 10px);
+    margin: 5px;
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+
+.account-option:hover {
+    transform: translateY(-5px);
+}
+
+@media (max-width: 768px) {
+    .account-option {
+        width: calc(50% - 10px);
+    }
+}
+
+@media (min-width: 769px) {
+    .account-option {
+        width: calc(25% - 20px);
+    }
+}
+
+.card.premium {
+    color: #fff;
+    background: linear-gradient(145deg, #58684d, #91b882);
+    border: 2px solid #FFD700;
+}
+
+.card.premium-header {
+    background: transparent;
+    border: none;
+    color: #FFD700;
+}
+
+.card.premium-body, .card.premium-footer {
+    background: transparent;
+    border: none;
+}
+
+.card.premium-button {
+    background-color: #91b882;
+}
+
+.card.standard {
+    color: #fff;
+    background: linear-gradient(145deg, #f47c7c, #f78f8f);
+}
+
+.card.standard-header, .card.standard-body, .card.standard-footer {
+    background: transparent;
+}
+
+.button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    margin: 10px 0;
+    cursor: pointer;
+    border-radius: 5px;
+    width: 100%;
+}
+
+.premium-button {
+    background-color: #58684d;
+    font-size: 18px;
+}
+
+.standard-button {
+    background-color: #f47c7c;
+}
+
+#tripCounter, #cartonCounter {
+    font-family: Lexend, sans-serif;
+    font-size: 23px;
+    color: #502719;
+}

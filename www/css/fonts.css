@@ -1,0 +1,9 @@
+@font-face {
+    font-family: 'Avenir';
+    src: url('../Typo/Avenir-Book.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'Lexend';
+    src: url('../Typo/Lexend-VariableFont_wght.ttf') format('truetype');
+}

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css">
+</head>
+<body>
+    
+<div class="container py-5">
+    <button onclick="goBack()" class="btn " style="background-color: #54694A; color:white;">&#x2190; Retour</button>
+
+    <h2 class="mb-4">Messages</h2>
+    <div class="d-flex flex-column">
+        <div class="card mb-3 w-75">
+            <div class="card-body">
+                Bonjour, en quoi pouvons nous vous aider ?</br>
+                Votre demande sera prise en compte par un de nos conseillés
+            </div>
+        </div>
+        <div class="card mb-3 w-75 ml-auto text-white" style="background-color: #54694A;">
+            <div class="card-body">
+                Ceci est un message sortant.
+            </div>
+        </div>
+    </div>
+    <div class="mt-4 pt-4">
+        <form id="sendMessageForm">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Écrire un message..." aria-label="Message" id="messageInput" autofocus>
+                <div class="input-group-append">
+                    <button class="btn" style="background-color: #54694A; color:white;" type="submit">Envoyer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+    <script>
+        function goBack() {
+        window.history.back();
+        }
+
+        document.getElementById('sendMessageForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const messageInput = document.getElementById('messageInput');
+    const messageText = messageInput.value.trim();
+    // Correction de l'URL pour inclure http:// et le fichier PHP spécifique
+    const apiUrl = "http://localhost:8001/index.php";
+
+    if (messageText) {
+        fetch(apiUrl, {
+            method: 'POST',
+            mode: 'no-cors', // Notez que le mode no-cors limite la visibilité de la réponse
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: messageText, idReceveur: 2 }),
+        })
+        .then(response => {
+            console.log("Réponse reçue");
+            // Dans le mode no-cors, la réponse ne sera pas lisible
+            const messagesContainer = document.querySelector('.d-flex.flex-column');
+            const newMessageDiv = document.createElement('div');
+            newMessageDiv.classList.add('card', 'mb-3', 'w-75', 'ml-auto', 'text-white');
+            newMessageDiv.style.backgroundColor = '#54694A';
+            newMessageDiv.innerHTML = `<div class="card-body">${messageText}</div>`;
+            messagesContainer.appendChild(newMessageDiv);
+
+            messageInput.value = ''; // Réinitialiser le champ de saisie
+        })
+        .catch((error) => {
+            console.error('Erreur:', error);
+        });
+    }
+});
+
+/* Affichage messages */
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const idReceveur = urlParams.get('conversation');
+    const idEnvoyeur = 1; // Ajustez selon votre logique pour déterminer l'ID de l'envoyeur
+
+    // Supposons que votre backend attend une action spécifique pour récupérer les messages
+    const apiUrl = 'http://localhost:8001/index.php'; // Ajustez selon votre configuration
+
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'getMessages', idEnvoyeur, idReceveur }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('La réponse du serveur n\'est pas OK');
+        }
+        return response.json();
+    })
+    .then(messages => {
+        const messagesContainer = document.querySelector('.d-flex.flex-column');
+        messagesContainer.innerHTML = ''; // Efface les messages existants
+        messages.forEach(message => {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('card', 'mb-3', message.id_envoyeur === idEnvoyeur.toString() ? 'ml-auto' : 'mr-auto', 'text-white');
+            messageDiv.style.backgroundColor = message.id_envoyeur === idEnvoyeur.toString() ? '#54694A' : '#007bff';
+            messageDiv.innerHTML = `<div class="card-body">${message.contenu}</div>`;
+            messagesContainer.appendChild(messageDiv);
+        });
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+    });
+});
+
+    </script>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

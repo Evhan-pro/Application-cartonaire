@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Profil</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 20px;
+            background: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-width: 100%; /* Ensure it doesn't overflow on small screens */
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px; /* Reduce padding on smaller screens */
+            }
+            .form-group {
+                margin-bottom: 10px; /* Reduce margin for form groups */
+            }
+            h2 {
+                font-size: 1.5rem; /* Adjust heading size for small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Profil Utilisateur</h2>
+        <form id="profileForm">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur:</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="updateProfile()">Mettre à jour</button>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Fonction pour obtenir les paramètres de l'URL
+        function getQueryParam(param) {
+            var urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+        
+        $(document).ready(function() {
+            var userId = getQueryParam('userId');  // Obtenez l'ID de l'utilisateur de l'URL
+        
+            // Vérifiez si l'userId est présent
+            if (userId) {
+                loadProfile(userId);  // Charger le profil avec l'ID
+            } else {
+                alert("Identifiant utilisateur non fourni dans l'URL.");
+            }
+        
+            function loadProfile(userId) {
+                $.ajax({
+                    url: '../index.php',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ action: 'loadProfile', userId: userId }),
+                    success: function(response) {
+                        if (response.username) {
+                            $('#username').val(response.username);
+                            $('#email').val(response.email);
+                        } else {
+                            alert('Erreur lors du chargement du profil: ' + response.error);
+                        }
+                    },
+                    error: function(xhr) {
+                        alert('Erreur AJAX: ' + xhr.status + ' ' + xhr.statusText);
+                    }
+                });
+            }
+        
+            // Fonction pour mettre à jour le profil
+            $('#profileForm').on('submit', function(e) {
+                e.preventDefault();
+                updateProfile(userId);
+            });
+        });
+        
+        function updateProfile(userId) {
+            var formData = {
+                action: 'updateProfile',
+                userId: userId,
+                username: $('#username').val(),
+                email: $('#email').val()
+            };
+        
+            $.ajax({
+                url: '../index.php',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    alert('Profil mis à jour avec succès');
+                },
+                error: function() {
+                    alert('Erreur lors de la mise à jour du profil');
+                }
+            });
+        }
+        </script>
+        
+</body>
+</html>

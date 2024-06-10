@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversations</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="css/menu.css">
+    <style>
+        .profile-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+        .header-with-button {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .add-button {
+            font-size: 24px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="header-with-button">
+            <h2 class="mb-4">Conversations</h2>
+            <i class="fas fa-plus-circle add-button" onclick="addConversation()"></i>
+        </div>
+        <div id="conversationsList" class="list-group">
+            <!-- Les conversations seront ajoutées ici dynamiquement -->
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="conversation.html"><i class="fas fa-envelope"></i></a>
+        <a href="index.html"><i class="fas fa-map-marker-alt"></i></a>
+        <a href="liste.html"><i class="fas fa-list"></i></a>
+    </div>
+
+    <script>
+        fetch('http://localhost:8001/index.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action: "getConversations", idEnvoyeur: 1 }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Données reçues:", data);  // Ajout pour voir les données
+            const conversationsList = document.getElementById('conversationsList');
+            if (data && data.length > 0) {  // Assurez-vous que les données ne sont pas vides
+                data.forEach(idReceveur => {
+                    const conversationItem = document.createElement('a');
+                    conversationItem.href = `messages.html?conversation=${idReceveur}`;
+                    conversationItem.classList.add('list-group-item', 'list-group-item-action d-flex align-items-center');
+                    conversationItem.innerHTML = `<img src="path/to/default/profile/image.jpg" class="profile-img">Conversation ${idReceveur}`;
+                    conversationsList.appendChild(conversationItem);
+                });
+            } else {
+                console.error("Aucune donnée ou erreur de format:", data); // Pour diagnostiquer des données vides ou mal formées
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors de la récupération des données');
+        });
+    
+        function addConversation() {
+            // Implémentez la logique pour ajouter une nouvelle conversation
+            alert('Ajouter une nouvelle conversation');
+        }
+    </script>
+    
+</body>
+</html>
