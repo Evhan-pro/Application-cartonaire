@@ -14,9 +14,9 @@
     var userId = localStorage.getItem('userId');
 
     $.ajax({
-        url: '../index.php', // Remplacez par le chemin vers votre script PHP
+        url: '../index.php',
         type: 'POST',
-        contentType: 'application/json', // Assurez-vous que votre serveur accepte le JSON
+        contentType: 'application/json',
         data: JSON.stringify({
             action: "getAddress",
             userId: userId
@@ -34,67 +34,179 @@
     });
     $('#reservationForm').on('submit', function(e) {
         e.preventDefault();
-        console.log('Form submission started.');
-
-        // var formData = new FormData(this);
-        // formData.append('action', 'addReservation');
-        // formData.append('userId', userId);
-        formData = {
-            'action': 'addReservation',
-            'userId': userId
-        }
-        console.log('FormData prepared.');
-        console.log(formData);
+        var formData = new FormData(this);
+        formData.append('action', 'addReservation'); // Assure d'ajouter 'action' pour que votre PHP puisse identifier l'opération
+        formData.append('userId', localStorage.getItem('userId')); // Ajoute userID à partir du localStorage
 
         $.ajax({
-            // url: '../index.php',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                console.log('AJAX call succeeded:', response);
-                if (response.message) {
-                    alert('Réservation ajoutée avec succès');
-                } else if (response.error) {
-                    console.log(formData);
-                    alert('Erreur : ' + response.error);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('AJAX call failed:', error);
-                alert('Erreur lors de l\'envoi du formulaire : ' + error);
-            }
-        });
+    url: '../index.php',
+    type: 'POST',
+    data: formData,
+    processData: false,
+    contentType: false,
+    dataType: 'json',  // Assure que jQuery attend une réponse JSON
+    success: function(data) {
+        if (data.message) {
+            alert('Réservation ajoutée avec succès');
+            $('#newReservationModal').modal('hide');
+        } else {
+            alert('Erreur lors de la réservation: ' + data.error);
+        }
+    },
+    error: function(xhr, status, error) {
+        alert('Erreur technique: ' + xhr.responseText);
+    }
+});
     });
+    $.ajax({
+        url: '../index.php',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            action: "getAddress",
+            userId: userId
+        }),
+        success: function(response) {
+            if (response.adresse) {
+                $('#newPassageAddress').val(response.adresse);
+            } else {
+                console.error('No address found:', response.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error fetching address:', error);
+        }
+    });
+
+    fetchNextPassages(userId);
+    fetchLastPassages(userId);
 });
 
+function fetchNextPassages(userId) {
+    $.ajax({
+        url: '../index.php',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            action: "getNextPassages",
+            userId: userId
+        }),
+        success: function(data) {
+            var carouselInner = $('#carouselNextPassages .carousel-inner');
+            carouselInner.empty();
+
+            data.forEach((item, index) => {
+                var isActive = index === 0 ? ' active' : '';
+                var carouselItem = $(`
+                    <div class="carousel-item${isActive}">
+                        <div class="row">
+                            <div class="col-md-4 col-sm-6 col-12">
+                                <div class="card">
+                                    <img src="img/${item.photo}" class="card-img-top" alt="Image">
+                                    <div class="card-body">
+                                        <h5 class="card-title">${item.date} à ${item.heure}</h5>
+                                        <p class="card-text">${item.adresse}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                carouselInner.append(carouselItem);
+            });
+        },
+        error: function(xhr, status, error) {
+            console.error("Error fetching passages: " + error);
+            alert("Error retrieving next passages.");
+        }
+    });
+}
+
+function fetchLastPassages(userId) {
+    $.ajax({
+        url: '../index.php',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            action: "getLastPassages",
+            userId: userId
+        }),
+        success: function(data) {
+            var carouselInner = $('#carouselLastPassages .carousel-inner');
+            carouselInner.empty();
+
+            if (data && data.length > 0) {
+                data.forEach((item, index) => {
+                var isActive = index === 0 ? ' active' : '';
+                var carouselItem = $(`
+                    <div class="carousel-item${isActive}">
+                        <div class="row">
+                            <div class="col-md-4 col-sm-6 col-12">
+                                <div class="card">
+                                    <img src="img/${item.photo}" class="card-img-top" alt="Image">
+                                    <div class="card-body">
+                                        <h5 class="card-title">${item.date} à ${item.heure}</h5>
+                                        <p class="card-text">${item.adresse}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                carouselInner.append(carouselItem);
+            });
+                $('#carouselLastPassages').carousel(); // Refresh/reinitialize le carrousel
+            } else {
+                carouselInner.html('<div class="carousel-item active"><p>No data available.</p></div>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("Error fetching last passages: " + error);
+            alert("Error retrieving last passages.");
+        }
+    });
+}
+
+
+
+function showPassageDetails(passage) {
+    // Suppose qu'un modal est déjà défini pour afficher les détails
+    $('#detailsModalTitle').text(passage.date + " à " + passage.heure);
+    $('#detailsModalBody').html(`
+        <p><strong>Adresse:</strong> ${passage.adresse}</p>
+        <img src="img/${passage.photo}" class="img-fluid" alt="Passage">
+    `);
+    $('#detailsModal').modal('show');
+}
     </script>
 </head>
 <body>
     <!-- Affichage Admin -->
     <div id="map"></div>
-    <button id="startRaceBtn" class="btn btn-primary" style="position: absolute; top: 10px; left: 10px;">Lancer la course</button>
+    <button id="startRaceBtn" class="btn btn-primary" style="position: absolute; top: 60px; left: 10px;">Lancer la course</button>
 
-    <div class="modal" id="myModal">
+<div class="modal" id="myModal">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Détails de la course</h5>
-                <span class="close">&times;</span>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            <div class="modal-body">
-                <img id="fourgon" src="img/fourgon.avif" alt="Voiture" class="img-fluid">
-                <p id="estimatedTime">Temps estimé: 15 minutes</p>
-                <p id="distance">Distance: 10 km</p>
+            <div class="modal-body text-center">
+                <img id="fourgon" src="img/image.png" alt="Voiture" class="img-fluid mb-3">
+                <p id="estimatedTime">Temps estimé: <strong>15 minutes</strong></p>
+                <p id="distance">Distance: <strong>10 km</strong></p>
             </div>
-            <p id="speedDisplay">Vitesse: 0 km/h</p>
-            <div id="pano" style="height: 200px;"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary close" data-bs-dismiss="modal">Fermer</button>
+            <div class="modal-footer justify-content-center">
                 <button id="startRace" type="button" class="btn btn-primary">Commencer la course</button>
             </div>
         </div>
     </div>
+</div>
+
+
 
     <!-- Affichage client -->
     <div class="reservation-container">
@@ -105,87 +217,107 @@
         </div>
     </div>
 
-    <!-- Modal pour la réservation -->
-    <div class="modal fade" id="newReservationModal" tabindex="-1" role="dialog" aria-labelledby="newReservationModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="newReservationModalLabel">Nouvelle réservation</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="reservationForm" action="../index.php" method="post" enctype="multipart/form-data">
-                        <div class="form-group">
-                            <label for="newPassageAddress">Adresse de passage</label>
-                            <input type="text" class="form-control" id="newPassageAddress" name="adresse" placeholder="Entrez l'adresse" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="newPassageDate">Date de passage</label>
-                            <input type="date" class="form-control" id="newPassageDate" name="date" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="newPassageTime">Heure de passage</label>
-                            <select class="form-control" id="newPassageTime" name="heure">
-                                <option>09:00</option>
-                                <option>10:00</option>
-                                <option>11:00</option>
-                                <option>12:00</option>
-                                <option>13:00</option>
-                                <option>14:00</option>
-                                <option>15:00</option>
-                                <option>16:00</option>
-                                <option>17:00</option>
-                                <option>18:00</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="newCartonQuantity">Quantité de cartons</label>
-                            <input type="number" class="form-control" id="newCartonQuantity" name="quantite" placeholder="Nombre de cartons" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="newUploadPhoto">Photo des cartons</label>
-                            <input type="file" class="form-control-file" id="newUploadPhoto" name="photo">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Réserver</button>
-                    </form>                    
-                </div>
+   <!-- Modal pour la réservation -->
+<div class="modal fade" id="newReservationModal" tabindex="-1" role="dialog" aria-labelledby="newReservationModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newReservationModalLabel">Nouvelle réservation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="reservationForm">
+                    <div class="form-group">
+                        <label for="newPassageAddress">Adresse de passage</label>
+                        <input type="text" class="form-control" id="newPassageAddress" name="adresse" placeholder="Entrez l'adresse" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassageDate">Date de passage</label>
+                        <input type="date" class="form-control" id="newPassageDate" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassageTime">Heure de passage</label>
+                        <select class="form-control" id="newPassageTime" name="heure">
+                            <option>09:00</option>
+                            <option>10:00</option>
+                            <option>11:00</option>
+                            <option>12:00</option>
+                            <option>13:00</option>
+                            <option>14:00</option>
+                            <option>15:00</option>
+                            <option>16:00</option>
+                            <option>17:00</option>
+                            <option>18:00</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newCartonQuantity">Quantité de cartons</label>
+                        <input type="number" class="form-control" id="newCartonQuantity" name="quantite" placeholder="Nombre de cartons" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUploadPhoto">Photo des cartons</label>
+                        <input type="file" class="form-control-file" id="newUploadPhoto" name="photo">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Réserver</button>
+                </form>                    
             </div>
         </div>
     </div>
+</div>
 
 
-    <div class="container">
-        <h3>Prochains passages</h3>
-        <div id="carouselNextPassages" class="carousel slide" data-ride="carousel">
-            <div class="carousel-inner">
-                <!-- Les éléments du carrousel seront ajoutés ici dynamiquement -->
+
+<div class="container">
+    <h3>Prochains passages</h3>
+    <div id="carouselNextPassages" class="carousel slide" data-ride="carousel">
+        <div class="carousel-inner"></div>
+        <a class="carousel-control-prev" href="#carouselNextPassages" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="sr-only">Précédent</span>
+        </a>
+        <a class="carousel-control-next" href="#carouselNextPassages" role="button" data-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="sr-only">Suivant</span>
+        </a>
+    </div>
+
+
+
+        <!-- Modal pour afficher les détails des passages -->
+<div class="modal fade" id="detailsModal" tabindex="-1" role="dialog" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalTitle">Détails du passage</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            <a class="carousel-control-prev" href="#carouselNextPassages" role="button" data-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="sr-only">Précédent</span>
-            </a>
-            <a class="carousel-control-next" href="#carouselNextPassages" role="button" data-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="sr-only">Suivant</span>
-            </a>
+            <div class="modal-body" id="detailsModalBody">
+                <!-- Les détails du passage seront insérés ici -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+            </div>
         </div>
+    </div>
+</div>
+
     
-        <h3>Derniers passages</h3>
-        <div id="carouselLastPassages" class="carousel slide" data-ride="carousel">
-            <div class="carousel-inner">
-                <!-- Les éléments du carrousel seront ajoutés ici dynamiquement -->
-            </div>
-            <a class="carousel-control-prev" href="#carouselLastPassages" role="button" data-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="sr-only">Précédent</span>
-            </a>
-            <a class="carousel-control-next" href="#carouselLastPassages" role="button" data-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="sr-only">Suivant</span>
-            </a>
-        </div>
+<h3>Derniers passages</h3>
+<div id="carouselLastPassages" class="carousel slide" data-ride="carousel">
+    <div class="carousel-inner"></div>
+    <a class="carousel-control-prev" href="#carouselLastPassages" role="button" data-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="sr-only">Précédent</span>
+    </a>
+    <a class="carousel-control-next" href="#carouselLastPassages" role="button" data-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="sr-only">Suivant</span>
+    </a>
+</div>
     </div>
 
     <div class="bottom-nav">

@@ -19,11 +19,10 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     })
     .then(data => {
         if (data.message) {
-            // Stocker l'ID utilisateur et l'ID entreprise dans le localStorage
+            // Stocke l'ID utilisateur et l'ID entreprise dans le localStorage
             localStorage.setItem('userId', data.userId);
-            localStorage.setItem('userEnterpriseId', data.userEnterpriseId); // Assurez-vous que cet ID est envoyé du backend
+            localStorage.setItem('userEnterpriseId', data.userEnterpriseId); // Assure que cet ID est envoyé du backend
 
-            alert('Connexion réussie');
             window.location.href = 'http://localhost:8001/www/index.html';
         } else if (data.error) {
             alert('Erreur de connexion: ' + data.error);

@@ -14,97 +14,53 @@
 <body>
     <div class="container">
         <h2>Mon Compte</h2>
-        <div class="account-option">
-            <h5><a href="#">Cartons en cours de récupération</a></h5>
-        </div>
-        <div class="account-option">
-            <h5><a href="#">Cartons récupérés</a></h5><span id="cartonCount">0</span>
-        </div>
+
+        <div class="d-flex align-items-center justify-content-start">
+          <div class="account-option mr-3">
+              <h5><a href="#">Cartons en cours de récupération</a></h5>
+          </div>
+          <div class="account-option">
+              <h5 class="mb-0"><a href="#">Cartons récupérés</a></h5>
+              <span id="cartonCount" class="ml-2">0</span>
+          </div>
+      </div>
+   
         <div class="account-image-full">
-            <div id="cartonCounter" style="position: absolute; top: 20px; left: 20px; padding: 10px; border-radius: 5px;">
-                Cartons: <span id="cartonCount">0</span>
-            </div>
-            <img src="img/camion.png" alt="Image Description" style="width: 100%; height: auto; border-radius: 10px;">
-            <div id="tripCounter" style="position: absolute; top: 20px; right: 20px; padding: 10px; border-radius: 5px;">
-                <span id="tripCount">0</span>/<span id="maxTrips">1</span> Trajets
-            </div>
+          <div id="cartonCounter" style="position: absolute; top: 20px; left: 20px; padding: 10px; border-radius: 5px;">
+          </div>
+          <img src="img/camion.png" alt="Image Description" style="width: 100%; height: auto; border-radius: 10px;">
+          <div id="tripCounter" style="position: absolute; top: 20px; right: 20px; padding: 10px; border-radius: 5px;">
+            <span id="tripCount">0</span>/<span id="maxTrips">1</span> Trajets
+          </div>
         </div>
         
         <div id="userSubscriptionCard" class="account-container"></div>
         <div class="account-container">
-            <div class="account-option">
-                <i class="fas fa-user"></i>
-                <h4><a href="profil.html" class="needs-user-id">Profil</a></h4>
-            </div>
-            <div class="account-option">
-                <i class="fas fa-home"></i>
-                <h4><a href="entreprise.html">Entreprise</a></h4>
-            </div>
-            <div class="account-option">
-                <i class="fas fa-cog"></i>
-                <h4>Paramètres</h4>
-            </div>
-            <div class="account-option">
-                <i class="fas fa-shield-alt"></i>
-                <h4>Sécurité</h4>
-            </div>
+          <div class="account-option profil">
+            <i class="fas fa-user"></i>
+            <h4><a href="profil.html" class="needs-user-id">Profil</a></h4>
+          </div>
+          <div class="account-option entreprise">
+            <i class="fas fa-home"></i>
+            <h4><a href="entreprise.html">Entreprise</a></h4>
+          </div>
+          <div class="account-option parametres">
+            <i class="fas fa-cog"></i>
+            <h4>Paramètres</h4>
+          </div>
+          <div class="account-option securite">
+            <i class="fas fa-shield-alt"></i>
+            <h4>Sécurité</h4>
+          </div>
         </div>
-    </div>
+      </div>
     
     <div class="bottom-nav">
         <a href="conversation.html" class="needs-user-id"><i class="fas fa-envelope"></i></a>
         <a href="index.html" class="needs-user-id"><i class="fas fa-map-marker-alt"></i></a>
         <a href="compte.html" class="needs-user-id"><i class="fas fa-list"></i></a>
     </div>
-
-    <script>
-        $(document).ready(function() {
-            var userId = localStorage.getItem('userId');
-            if (userId) {
-                $.ajax({
-                    url: '../index.php',
-                    type: 'POST',
-                    data: JSON.stringify({ action: 'getUserSubscription', userId: userId }),
-                    contentType: 'application/json; charset=utf-8',
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response) {
-                            displaySubscriptionCard(response);
-                        }
-                    },
-                    error: function(xhr) {
-                        console.error("Erreur lors de la récupération de l'abonnement: " + xhr.responseText);
-                    }
-                });
-            } else {
-                window.location.href = 'login.html';
-            }
-        });
-
-        function displaySubscriptionCard(response) {
-            var abonnement = response.abonnement;
-            var tripsMade = response.trips;
-            var totalCartons = response.totalCartons;
-            var cardClass = abonnement.type === 'premium' ? 'premium' : 'standard';
-            var maxTrips = abonnement.type === 'premium' ? 3 : 1;
-
-            $('#tripCount').text(tripsMade);
-            $('#maxTrips').text(maxTrips);
-            $('#cartonCount').text(totalCartons);
-
-            var cardHtml = `<div class="card ${cardClass}">
-                <div class="card-header ${cardClass}-header">${abonnement.type.charAt(0).toUpperCase() + abonnement.type.slice(1)}</div>
-                <div class="card-body ${cardClass}-body">
-                    <p>${abonnement.description}</p>
-                </div>
-                <div class="card-footer ${cardClass}-footer">
-                    ${abonnement.prix}€/mois
-                    <button class="button ${cardClass}-button" onclick="window.location.href='abonnements.html'">Voir les options</button>
-                </div>
-            </div>`;
-            $('#userSubscriptionCard').html(cardHtml);
-        }
-    </script>
+    <script src="js/compte.js"></script> 
     <script src="js/get_id.js"></script>
 </body>
 </html>

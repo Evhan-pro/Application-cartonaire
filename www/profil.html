@@ -5,33 +5,61 @@
     <title>Profil</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="css/menu.css">
     <style>
         body {
             padding-top: 20px;
-            background: #f4f4f4;
+            background: #fff; /* Couleur de fond du corps de la page */
         }
         .container {
-            background: white;
-            padding: 15px;
+            background: #fff; /* Fond du conteneur */
+            color: #543612; /* Couleur du texte */
+            padding: 20px; /* Augmenter le padding pour plus d'espace */
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            max-width: 100%; /* Ensure it doesn't overflow on small screens */
+            margin: 20px auto; /* Centrage et espace autour du conteneur */
+            width: 90%; /* Largeur maximale pour plus d'espace sur les côtés */
         }
+        input{
+            background-color: transparent !important;
+            border: 2px solid #543612 !important; /* Bordure plus visible */
+            color: #543612 !important;
+        }
+
+        button{
+            background-color: #cfb69b !important;
+            border-color: #cfb69b !important;
+            color: #543612 !important;
+            font-weight : bold !important;
+        }
+
+        
         @media (max-width: 768px) {
             .container {
-                padding: 10px; /* Reduce padding on smaller screens */
+                width: 95%; /* Encore plus large sur les tablettes */
             }
-            .form-group {
-                margin-bottom: 10px; /* Reduce margin for form groups */
+        }
+        @media (max-width: 576px) {
+            .container {
+                width: 100%; /* Utiliser toute la largeur sur les téléphones */
+                padding: 15px; /* Adapter le padding pour les petits écrans */
             }
-            h2 {
-                font-size: 1.5rem; /* Adjust heading size for small screens */
-            }
+        }
+
+        .back{
+            margin-bottom: 3%;
+        }
+        .back{
+            background-color: #54694A; 
+            color:white;
+            padding: 10px 20px; /* Plus large pour une meilleure accessibilité sur mobile */
+            border-radius: 5px; /* Bordures arrondies */
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <button onclick="goBack()" class="btn back">&#x2190; Retour</button>
         <h2>Profil Utilisateur</h2>
         <form id="profileForm">
             <div class="form-group">
@@ -46,20 +74,23 @@
         </form>
     </div>
 
+    <div class="bottom-nav">
+        <a href="conversation.html" class="needs-user-id"><i class="fas fa-envelope"></i></a>
+        <a href="index.html" class="needs-user-id"><i class="fas fa-map-marker-alt"></i></a>
+        <a href="compte.html" class="needs-user-id"><i class="fas fa-list"></i></a>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // Fonction pour obtenir les paramètres de l'URL
         function getQueryParam(param) {
             var urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(param);
         }
         
         $(document).ready(function() {
-            var userId = getQueryParam('userId');  // Obtenez l'ID de l'utilisateur de l'URL
-        
-            // Vérifiez si l'userId est présent
+            var userId = getQueryParam('userId');
             if (userId) {
-                loadProfile(userId);  // Charger le profil avec l'ID
+                loadProfile(userId);
             } else {
                 alert("Identifiant utilisateur non fourni dans l'URL.");
             }
@@ -84,12 +115,15 @@
                 });
             }
         
-            // Fonction pour mettre à jour le profil
             $('#profileForm').on('submit', function(e) {
                 e.preventDefault();
                 updateProfile(userId);
             });
         });
+
+        function goBack() {
+        window.history.back();
+    }
         
         function updateProfile(userId) {
             var formData = {
@@ -112,7 +146,6 @@
                 }
             });
         }
-        </script>
-        
+    </script>
 </body>
 </html>

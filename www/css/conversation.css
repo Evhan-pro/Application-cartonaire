@@ -1,0 +1,15 @@
+.profile-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 15px;
+}
+.header-with-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.add-button {
+    font-size: 24px;
+    cursor: pointer;
+}

@@ -1,10 +1,12 @@
 <?php
+ob_start();
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(200);
@@ -19,62 +21,117 @@ $dbname = "cartonaire";
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 if ($conn->connect_error) {
-    die(json_encode(['error' => 'Connection failed: ' . $conn->connect_error]));
+    echo json_encode(['error' => 'Connection failed: ' . $conn->connect_error]);
+    exit;
 }
 
 $content = file_get_contents("php://input");
+error_log("Received content: " . $content);
 $data = json_decode($content, true);
+error_log("Decoded JSON: " . print_r($data, true));
 
-if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
-    echo json_encode(["error" => "Invalid JSON data"]);
+if (json_last_error() !== JSON_ERROR_NONE) {
+    echo json_encode(["error" => "Invalid JSON data: " . json_last_error_msg()]);
+    exit;
+}
+
+if (!isset($data)) {
+    echo json_encode(["error" => "No data received"]);
     exit;
 }
 
 $action = $data["action"] ?? null;
 
 if ($action === "sendMessage") {
-    $message = $data["message"] ?? '';
-    $idReceveur = $data["idReceveur"] ?? 0;
-    $idEnvoyeur = 1; // Supposons que cet ID soit défini par la session utilisateur ou un autre moyen
+    $id_conversation = $_POST['id_conversation'];
+    $idEnvoyeur = $_POST['idEnvoyeur'];
+    $message = $_POST['message'];
 
-    $stmt = $conn->prepare("INSERT INTO messagerie (id_envoyeur, id_receveur, contenu) VALUES (?, ?, ?)");
-    if (!$stmt) {
-        echo json_encode(["error" => "SQL Error: " . $conn->error]);
-        exit;
-    }
-
-    $stmt->bind_param("iis", $idEnvoyeur, $idReceveur, $message);
-
+    $stmt = $conn->prepare("INSERT INTO messagerie (id_envoyeur, id_conversation, contenu) VALUES (?, ?, ?)");
+    $stmt->bind_param("iis", $idEnvoyeur, $id_conversation, $message);
     if ($stmt->execute()) {
         echo json_encode(["message" => "Message sent successfully"]);
     } else {
         echo json_encode(["error" => "Error sending message: " . $stmt->error]);
     }
-
     $stmt->close();
+} elseif ($action === "getAllUsers") {
+    $sql = "SELECT id_user, nom, prenom FROM user WHERE id_entreprise = 1";
+    $result = $conn->query($sql);
+    $users = [];
 
-} elseif ($action === "getConversations") {
-    $idEnvoyeur = 1; // Idem, supposons que cet ID soit connu
+    if ($result->num_rows > 0) {
+        while($row = $result->fetch_assoc()) {
+            $users[] = $row;
+        }
+        echo json_encode($users);
+    } else {
+        echo json_encode(["error" => "No users found"]);
+    }
+}elseif ($action === "getConversations") {
+    $userId = $data["userId"] ?? 0;
+    if ($userId) {
+        $stmt = $conn->prepare("SELECT c.id_conversation, c.titre FROM conversation c JOIN participation p ON c.id_conversation = p.id_conversation WHERE p.id_user = ?");
+        if (!$stmt) {
+            error_log("SQL prepare error: " . $conn->error); // Log SQL preparation errors
+            echo "<p>SQL Error: " . htmlspecialchars($conn->error) . "</p>";
+            exit;
+        }
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $conversations = [];
+            while ($row = $result->fetch_assoc()) {
+                $conversations[] = $row;
+            }
+            echo json_encode($conversations);
+        } else {
+            echo json_encode(["error" => "No conversations found"]);
+        }
+    } else {
+        echo json_encode(["error" => "User ID not provided"]);
+    }
+}
+ elseif ($action === "addConversation") {
+    $data = json_decode(file_get_contents("php://input"), true); // Récupération des données en JSON
+    
+    $idEnvoyeur = $data['idEnvoyeur'] ?? null;
+    $idReceveur = $data['idReceveur'] ?? null;
+    $titre = $data['titre'] ?? 'Conversation sans titre';
 
-    $sql = "SELECT DISTINCT id_receveur FROM messagerie WHERE id_envoyeur = ?";
-    $stmt = $conn->prepare($sql);
+    if (!$idEnvoyeur) {
+        echo json_encode(["error" => "ID de l'envoyeur manquant"]);
+        exit;
+    }
+    if (!$idReceveur) {
+        echo json_encode(["error" => "ID du receveur manquant"]);
+        exit;
+    }
+
+    // Créer une nouvelle conversation
+    $stmt = $conn->prepare("INSERT INTO conversation (titre) VALUES (?)");
     if (!$stmt) {
         echo json_encode(["error" => "SQL Error: " . $conn->error]);
         exit;
     }
-
-    $stmt->bind_param("i", $idEnvoyeur);
+    $stmt->bind_param("s", $titre);
     $stmt->execute();
-    $result = $stmt->get_result();
+    $id_conversation = $conn->insert_id;
 
-    $conversations = [];
-    while ($row = $result->fetch_assoc()) {
-        $conversations[] = $row['id_receveur'];
+    // Associer l'envoyeur et le receveur à la conversation
+    $stmt = $conn->prepare("INSERT INTO participation (id_conversation, id_user) VALUES (?, ?), (?, ?)");
+    $stmt->bind_param("iiii", $id_conversation, $idEnvoyeur, $id_conversation, $idReceveur);
+    if ($stmt->execute()) {
+        echo json_encode(["message" => "Conversation créée avec succès", "id_conversation" => $id_conversation, "titre" => $titre]);
+    } else {
+        echo json_encode(["error" => "Erreur lors de l'exécution de la requête: " . $stmt->error]);
     }
+    $stmt->close();
+}
 
-    echo json_encode($conversations);
-    
-} elseif ($action === "getMessages") {
+
+ elseif ($action === "getMessages") {
     $idEnvoyeur = $data["idEnvoyeur"] ?? 0;
     $idReceveur = $data["idReceveur"] ?? 0;
 
@@ -114,10 +171,10 @@ if ($action === "sendMessage") {
         echo json_encode([
             "message" => "Connexion réussie", 
             "userId" => $row['id_user'],
-            "userEnterpriseId" => $row['id_entreprise'] // Assurez-vous que cette colonne est récupérée
+            "userEnterpriseId" => $row['id_entreprise']
         ]);
     } else {
-        http_response_code(401); // Non autorisé
+        http_response_code(401);
         echo json_encode(["error" => "Identifiants invalides"]);
     }
 
@@ -154,24 +211,33 @@ if ($action === "sendMessage") {
         $uploadDir = 'uploads/';
         $uploadedFile = $uploadDir . basename($_FILES["photo"]["name"]);
         if (!move_uploaded_file($_FILES["photo"]["tmp_name"], $uploadedFile)) {
-            die(json_encode(["error" => "Failed to upload file"]));
+            echo json_encode(["error" => "Échec du téléchargement du fichier"]);
+            exit;
         }
+    }
+
+    if (!$userId || !$adresse || !$heure || $quantite < 1) {
+        echo json_encode(["error" => "Données de réservation incomplètes ou incorrectes"]);
+        exit;
     }
 
     $stmt = $conn->prepare("INSERT INTO reservations (user_id, adresse, heure, quantite, photo) VALUES (?, ?, ?, ?, ?)");
     if (!$stmt) {
-        echo json_encode(["error" => "SQL Error: " . $conn->error]);
+        echo json_encode(["error" => "Erreur SQL: " . $conn->error]);
         exit;
     }
 
     $stmt->bind_param("issis", $userId, $adresse, $heure, $quantite, $uploadedFile);
     if ($stmt->execute()) {
-        echo json_encode(["message" => "Reservation added successfully"]);
+        echo json_encode(["message" => "Réservation ajoutée avec succès"]);
     } else {
-        echo json_encode(["error" => "Error adding reservation: " . $stmt->error]);
+        echo json_encode(["error" => "Erreur lors de l'ajout de la réservation: " . $stmt->error]);
     }
     $stmt->close();
-} elseif ($action === "loadProfile") {
+}
+
+
+ elseif ($action === "loadProfile") {
     $userId = $data["userId"] ?? null;
     if ($userId) {
         $stmt = $conn->prepare("SELECT u.nom, u.prenom, e.nom, e.adresse, e.numero_telephone FROM user u INNER JOIN entreprise e ON u.id_entreprise = e.id_entreprise WHERE u.id_user = ?");
@@ -268,6 +334,70 @@ elseif ($action === "getUserInfo") {
         echo json_encode(["error" => "User ID not provided"]);
     }
 }
+
+elseif ($action === "getNextPassages") {
+    $userId = $data["userId"] ?? 0;
+    if ($userId) {
+        $sql = "SELECT adresse, date, heure, photo FROM reservations WHERE user_id = ? AND date >= CURDATE() ORDER BY date ASC, heure ASC";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            echo json_encode(["error" => "Erreur SQL: " . $conn->error]);
+            exit;
+        }
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $passages = [];
+        while ($row = $result->fetch_assoc()) {
+            $passages[] = $row;
+        }
+        echo json_encode($passages);
+    } else {
+        echo json_encode(["error" => "ID utilisateur non fourni"]);
+    }
+}
+
+elseif ($action === "getLastPassages") {
+    $userId = $data["userId"] ?? 0;
+    if ($userId) {
+        $sql = "SELECT adresse, date, heure, quantite, photo FROM historique_passages WHERE id_user = ? ORDER BY date DESC, heure DESC LIMIT 9";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            echo json_encode(["error" => "Erreur SQL: " . $conn->error]);
+            exit;
+        }
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $passages = [];
+        while ($row = $result->fetch_assoc()) {
+            $passages[] = $row;
+        }
+        echo json_encode($passages);
+    } else {
+        echo json_encode(["error" => "ID utilisateur non fourni"]);
+    }
+}
+
+elseif ($action === "getTodayReservations") {
+    $userId = $data["userId"] ?? 0;
+    $date = $data["date"] ?? date('Y-m-d'); // Utilise la date envoyée
+    $sql = "SELECT adresse, date, heure, photo FROM reservations WHERE date = ?";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        echo json_encode(["error" => "Erreur SQL: " . $conn->error]);
+        exit;
+    }
+    $stmt->bind_param("s", $date);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $reservations = [];
+    while ($row = $result->fetch_assoc()) {
+        $reservations[] = $row;
+    }
+    echo json_encode($reservations);
+}
+
 
 $conn->close();
 ?>

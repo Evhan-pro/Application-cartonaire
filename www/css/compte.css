@@ -2,6 +2,10 @@ body {
     padding-top: 20px;
     background: #f4f4f4;
 }
+
+h2{
+color: #543612;
+}
 .account-image-full {
     background: white;
     margin: 5px;
@@ -21,7 +25,7 @@ body {
 }
 
 .account-option {
-    background: white;
+    background: #cfb69b;
     width: calc(50% - 10px);
     margin: 5px;
     text-align: center;
@@ -29,6 +33,10 @@ body {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     transition: transform 0.3s;
+}
+
+.account-option i, .account-option h4, .account-option a, .account-option span{
+    color: #543612;
 }
 
 .account-option:hover {
@@ -50,7 +58,6 @@ body {
 .card.premium {
     color: #fff;
     background: linear-gradient(145deg, #58684d, #91b882);
-    border: 2px solid #FFD700;
 }
 
 .card.premium-header {

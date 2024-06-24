@@ -7,7 +7,7 @@
     position: fixed;
     bottom: 0;
     width: 100%;
-    background-color: #f2f2f2;
+    background-color: #cfb69b;
     box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
 }
 
@@ -15,7 +15,7 @@
     flex-grow: 1;
     text-align: center;
     padding: 10px 0;
-    color: #333;
+    color: #543612;
     text-decoration: none;
     font-size: 16px;
 }
